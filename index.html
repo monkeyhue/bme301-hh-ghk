@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BME 301 Term Project</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>   
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex;
+      border-bottom: 2px solid #e8e8e4;
+      background: #fafaf8;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 1rem 1.25rem;
+      border: none;
+      background: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+    .tab-btn:hover { color: #333; }
+    .tab-btn.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+      background: #fff;
+    }
+
+    /* ── Tab panels ── */
+    .tab-panel { display: none; padding: 2rem; }
+    .tab-panel.active { display: block; }
+
+    /* ── Shared typography ── */
+    h1 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 0.25rem;
+    }
+    .subtitle {
+      font-size: 0.83rem;
+      color: #666;
+      margin-bottom: 1.75rem;
+      line-height: 1.5;
+    }
+
+    /* ── HH controls ── */
+    .hh-controls {
+      display: grid;
+      grid-template-columns: minmax(280px, 560px);
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .control-group label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+    .slider-row input[type="number"] {
+      width: 64px;
+      padding: 4px 6px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #111;
+      text-align: right;
+      -moz-appearance: textfield;
+      background: #fafafa;
+    }
+    .slider-row input[type="number"]:focus {
+      outline: none;
+      border-color: #2563eb;
+      background: #fff;
+    }
+    .slider-row input[type="number"]::-webkit-outer-spin-button,
+    .slider-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .slider-unit { font-size: 0.8rem; color: #888; min-width: 24px; }
+    .control-note { font-size: 0.73rem; color: #999; margin-top: 4px; }
+
+    /* ── Metric cards (HH) ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .metric-card {
+      background: #f8f8f6;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+    }
+    .metric-label {
+      font-size: 0.7rem;
+      color: #888;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .metric-value {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #111;
+      line-height: 1;
+    }
+    .metric-unit { font-size: 0.7rem; color: #aaa; margin-top: 3px; }
+
+    /* ── Chart ── */
+    .chart-wrap { position: relative; height: 360px; }
+
+    /* ── GHK tab ── */
+    .ion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 1.25rem;
+    }
+    .ion-section {
+      border: 1px solid #e8e8e4;
+      border-radius: 8px;
+      padding: 1rem;
+      background: #fafaf8;
+    }
+    .ion-section h3 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 0.75rem;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e8e8e4;
+    }
+    .ion-section label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #666;
+      margin-top: 10px;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .ion-section input[type="number"] {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #111;
+      background: #fff;
+      -moz-appearance: textfield;
+    }
+    .ion-section input[type="number"]:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+    .ion-section input[type="number"]::-webkit-outer-spin-button,
+    .ion-section input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .calc-btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 1.25rem;
+      letter-spacing: 0.01em;
+    }
+    .calc-btn:hover { background: #1d4ed8; }
+
+    .ghk-results {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+    .ghk-vm {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #334155;
+      color: #fff;
+    }
+    .ghk-vm span { color: #34d399; }
+    .ghk-eq {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #334155;
+      gap: 8px;
+    }
+    .ghk-eq div span { display: block; font-size: 1rem; font-weight: 600; color: #e2e8f0; margin-top: 4px; }
+
+    .impulse-status {
+      text-align: center;
+      padding: 0.65rem 1rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.3s, color 0.3s;
+    }
+    .impulse-status.below {
+      background: #0f172a;
+      color: #64748b;
+    }
+    .impulse-status.above {
+      background: #dc2626;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('hh', this)">
+      Voltage Clamp (Hodgkin & Huxley)
+    </button>
+    <button class="tab-btn" onclick="switchTab('ghk', this)">
+      Membrane Potential (Goldman–Hodgkin–Katz)
+    </button>
+  </div>
+
+  <!-- Hodgkin Huxley stuff -->
+  <div id="tab-hh" class="tab-panel active">
+
+    <h2>Voltage Clamp Simulator</h2>
+    <p class="subtitle">
+     This simulator models the Voltage Clamp Experiment explored by <strong>Hodgkin and Huxley</strong>. Enter a clamped voltage and observe how the <strong>conductance</strong> of each ion channel changes!
+    </p>
+	<p class="subtitle">
+      <strong>Why is this is important?</strong><br>
+	  Before Hodgkin and Huxley, scientists thought that conductance was constant for ion channels. However, by measuring the membrane current at different clamped voltages, Hodgkin and Huxley calculated that <strong>conductance was not the same for each trial!</strong><br><br>This discovery revealed that <strong>channels are dynamic systems</strong>, able to open, close and regulate flow with discretion rather than merely going by concentration gradient.<br><br>This gave biologists the first understandings of how electricity was managed in the body, and went on to explain the function of <strong>action potentials</strong>: an important electrical process in all bodily cells.
+    </p>
+
+<div class="hh-controls">
+      <div class="control-group">
+        <label>Clamp Voltage</label>
+        <div class="slider-row">
+          <input type="range"  id="v_clamp_range" min="-150" max="50" value="-20" step="1"
+                 oninput="syncFromSlider()">
+          <input type="number" id="v_clamp_num"   min="-150" max="50" value="-20" step="1"
+                 oninput="syncFromNumber()">
+          <span class="slider-unit">mV</span>
+        </div>
+        <div class="control-note">−150 to +50 mV</div>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-label">Peak g<sub>Na</sub></div>
+        <div class="metric-value" id="peak_gna">—</div>
+        <div class="metric-unit">mS/cm²</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Peak g<sub>K</sub></div>
+        <div class="metric-value" id="peak_gk">—</div>
+        <div class="metric-unit">mS/cm²</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="hhChart"></canvas>
+    </div>
+	
+	<h1>
+    Why are sodium channels bulls, and potassium channels sloths?
+    </h1>
+    <p class="subtitle">
+     You might notice that the sodium channel rises, before conductance dies back down. This is because <strong>sodium channels open before potassium channels</strong>, pulling in an influx of sodium to balance clamped voltage. The sodium channel also has a <strong>secondary gate</strong>, blocking the uptake of sodium once the concentration within is sufficient.<br><br>
+	 
+	 All that sodium <strong>depolarizes</strong> the cell, meaning that <strong>the cell becomes more positively charged.</strong> This depolarization is what creates an <strong>action potential!</strong> Because sodium channels move fast, we call them bulls.<br><br>
+	 
+	However, the cell can't keep that charge forever! This is where <strong>potassium channels</strong> come in: they open slower, allowing potassium to trickle out and rebalance the cell potential. This "resets" the cell and returns it to its resting voltage, which is usually <strong>-70 mV</strong>.  Because of their slow nature, we call potassium channels sloths!<br><br>
+	
+	<strong>Remember:</strong> Conductance is important because it measures how many channels are open. Higher conductance means more ions can move in or out!
+    </p>
+
+  </div>
+
+  <!-- Ion Concentration and Membrane Potential -->
+  <div id="tab-ghk" class="tab-panel">
+
+    <h2>Membrane Potential Simulator</h2>
+    <p class="subtitle">
+      This tool lets you customize concentrations of <strong>Na⁺, K⁺</strong> and <strong>Cl⁻</strong> ions inside and outside a cell membrane. Using the <strong>Goldman–Hodgkin–Katz equation</strong>, you can yield a membrane potential! You can also check if your membrane potential matches the voltage required for an action potential.
+    </p>
+	<p class="subtitle">
+      <strong>Why is this is important?</strong><br>
+	  A cell's membrane potential measures the difference between the voltage inside and outside of the membrane. When this reaches a <strong>critical voltage</strong>, (which you can find with this tool!) an <strong>action potential</strong> is generated!
+    </p>
+
+    <div class="ion-grid">
+
+      <div class="ion-section">
+        <h3>Sodium (Na⁺) 🐂</h3>
+        <label>Intracellular [Na⁺] (mM)</label>
+        <input type="number" id="na_in" value="10">
+        <label>Extracellular [Na⁺] (mM)</label>
+        <input type="number" id="na_out" value="150">
+      </div>
+
+      <div class="ion-section">
+        <h3>Potassium (K⁺) 🦥</h3>
+        <label>Intracellular [K⁺] (mM)</label>
+        <input type="number" id="k_in" value="150">
+        <label>Extracellular [K⁺] (mM)</label>
+        <input type="number" id="k_out" value="10">
+      </div>
+
+      <div class="ion-section">
+        <h3>Chloride (Cl⁻)</h3>
+        <label>Intracellular [Cl⁻] (mM)</label>
+        <input type="number" id="cl_in" value="0">
+        <label>Extracellular [Cl⁻] (mM)</label>
+        <input type="number" id="cl_out" value="100">
+      </div>
+
+    </div>
+
+    <button class="calc-btn" onclick="calculateGHK()">Calculate Membrane Potential!</button>
+
+    <div class="ghk-results">
+      <div class="ghk-vm">
+        V<sub>m</sub> = <span id="res_vm">—</span>
+      </div>
+      <div class="ghk-eq">
+        <div>E<sub>Na</sub><span id="res_eNa">—</span></div>
+        <div>E<sub>K</sub><span id="res_eK">—</span></div>
+        <div>E<sub>Cl</sub><span id="res_eCl">—</span></div>
+      </div>
+      <div id="impulse_status" class="impulse-status below">
+        <span id="status_text">Sub-threshold — no action potential</span>
+      </div>
+    </div>
+	
+	<br>
+	<h1>
+    What is an action potential?
+    </h1>
+    <p class="subtitle">
+	  An action potential is an electrical event within the cell which causes certain events to happen, like the opening or closing of certain channels, release of chemicals and neuotransmitters, and more. Because electricity usually does not move directly from cell to cell, it's these secondary events that allow cells to relay an action potential down a line.
+
+  </div>
+
+</div>
+
+<script>
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+    if (id === 'hh' && hhChart) hhChart.resize();
+  }
+
+  // Hodgkin Huxley stuff
+ let hhChart;
+ 
+  const TEMP      = 6.3;
+  const DT        = 0.01;
+ 
+  function syncFromSlider() {
+    document.getElementById('v_clamp_num').value = document.getElementById('v_clamp_range').value;
+    runHH();
+  }
+  function syncFromNumber() {
+    let val = parseFloat(document.getElementById('v_clamp_num').value);
+    if (isNaN(val)) return;
+    val = Math.max(-150, Math.min(50, val));
+    document.getElementById('v_clamp_range').value = val;
+    runHH();
+  }
+ 
+  function alphaN(v) {
+    if (Math.abs(v - 10) < 1e-5) return 0.1;
+    return 0.01 * (10 - v) / (Math.exp((10 - v) / 10) - 1);
+  }
+  function betaN(v)  { return 0.125 * Math.exp(-v / 80); }
+  function alphaM(v) {
+    if (Math.abs(v - 25) < 1e-5) return 1.0;
+    return 0.1 * (25 - v) / (Math.exp((25 - v) / 10) - 1);
+  }
+  function betaM(v)  { return 4 * Math.exp(-v / 18); }
+  function alphaH(v) { return 0.07 * Math.exp(-v / 20); }
+  function betaH(v)  { return 1 / (Math.exp((30 - v) / 10) + 1); }
+ 
+  function ssGating(v) {
+    return {
+      n: alphaN(v) / (alphaN(v) + betaN(v)),
+      m: alphaM(v) / (alphaM(v) + betaM(v)),
+      h: alphaH(v) / (alphaH(v) + betaH(v)),
+    };
+  }
+ 
+ // Thanks matlab grader
+ function runHH() {
+    const Vc_abs = parseFloat(document.getElementById('v_clamp_num').value);
+    if (isNaN(Vc_abs)) return;
+ 
+    const V_REST = -70;
+    const Vc = Vc_abs - V_REST;
+ 
+    const phi   = Math.pow(3, (TEMP - 6.3) / 10);
+    const steps = Math.round((12) / DT);
+ 
+    const rest = ssGating(0);
+    let n = rest.n, m = rest.m, h = rest.h;
+ 
+    let timeData = [], gNaData = [], gKData = [];
+    let peakNa = 0, peakK = 0;
+ 
+    for (let i = 0; i <= steps; i++) {
+      const t = i * DT;
+      const V = t < 2 ? 0 : Vc;
+ 
+      n += phi * (alphaN(V) * (1 - n) - betaN(V) * n) * DT;
+      m += phi * (alphaM(V) * (1 - m) - betaM(V) * m) * DT;
+      h += phi * (alphaH(V) * (1 - h) - betaH(V) * h) * DT;
+      n = Math.max(0, Math.min(1, n));
+      m = Math.max(0, Math.min(1, m));
+      h = Math.max(0, Math.min(1, h));
+ 
+      const gK  = 36  * Math.pow(n, 4);
+      const gNa = 120 * Math.pow(m, 3) * h;
+ 
+      if (t >= 2) {
+        if (gNa > peakNa) peakNa = gNa;
+        if (gK  > peakK)  peakK  = gK;
+      }
+ 
+      timeData.push((t - 2).toFixed(2));
+      gKData.push(parseFloat(gK.toFixed(3)));
+      gNaData.push(parseFloat(gNa.toFixed(3)));
+    }
+ 
+    document.getElementById('peak_gna').textContent = peakNa.toFixed(1);
+    document.getElementById('peak_gk').textContent  = peakK.toFixed(1);
+    updateChart(timeData, gNaData, gKData);
+  }
+ 
+  function updateChart(labels, na, k) {
+    const ctx = document.getElementById('hhChart').getContext('2d');
+    if (hhChart) hhChart.destroy();
+ 
+    const stepIdx = Math.round(2 / DT);
+ 
+    const clampLinePlugin = {
+      id: 'clampLine',
+      afterDraw(chart) {
+        const { ctx, scales: { x, y } } = chart;
+        const xPx = x.getPixelForValue(stepIdx);
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(120,120,120,0.45)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(xPx, y.top);
+        ctx.lineTo(xPx, y.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(100,100,100,0.65)';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('clamp on', xPx + 5, y.top + 14);
+        ctx.restore();
+      }
+    };
+ 
+    hhChart = new Chart(ctx, {
+      type: 'line',
+      plugins: [clampLinePlugin],
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'gNa (sodium)',
+            data: na,
+            borderColor: '#c2410c',
+            backgroundColor: 'rgba(194,65,12,0.07)',
+            borderWidth: 2, pointRadius: 0, fill: true, tension: 0.1,
+          },
+          {
+            label: 'gK (potassium)',
+            data: k,
+            borderColor: '#1d4ed8',
+            backgroundColor: 'rgba(29,78,216,0.07)',
+            borderWidth: 2, pointRadius: 0, fill: true, tension: 0.1,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 150 },
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: {
+            title: { display: true, text: 'Time (ms)', font: { size: 12 } },
+            ticks: {
+              maxTicksLimit: 12,
+              callback: (val, idx) => labels[idx] !== undefined ? labels[idx] : null,
+              font: { size: 11 },
+            }
+          },
+          y: {
+            title: { display: true, text: 'Conductance (mS/cm²)', font: { size: 12 } },
+            beginAtZero: true,
+          }
+        },
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 12 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} mS/cm²` } }
+        }
+      }
+    });
+  }
+
+  // Ion Concentration and Membrane Potential
+  function calculateNernst(c_in, c_out, z) {
+    const RT_F = 26.7; // mV at 37 °C
+    return (RT_F / z) * Math.log(c_out / c_in);
+  }
+
+  function calculateGHK() {
+    const nai = parseFloat(document.getElementById('na_in').value);
+    const nao = parseFloat(document.getElementById('na_out').value);
+    const ki  = parseFloat(document.getElementById('k_in').value);
+    const ko  = parseFloat(document.getElementById('k_out').value);
+    const cli = parseFloat(document.getElementById('cl_in').value);
+    const clo = parseFloat(document.getElementById('cl_out').value);
+	
+	const pNa = 0.05;
+    const pK  = 1.0;
+    const pCl = 0.45;
+
+    const RT_F = 26.7;
+
+    const numerator   = (pK * ko)  + (pNa * nao) + (pCl * cli);
+    const denominator = (pK * ki)  + (pNa * nai) + (pCl * clo);
+    const Vm = RT_F * Math.log(numerator / denominator);
+
+    const eNa = calculateNernst(nai, nao,  1);
+    const eK  = calculateNernst(ki,  ko,   1);
+    const eCl = calculateNernst(cli, clo, -1);
+
+    document.getElementById('res_vm').textContent  = Vm.toFixed(2)  + ' mV';
+    document.getElementById('res_eNa').textContent = eNa.toFixed(1) + ' mV';
+    document.getElementById('res_eK').textContent  = eK.toFixed(1)  + ' mV';
+    document.getElementById('res_eCl').textContent = eCl.toFixed(1) + ' mV';
+
+    const statusBox  = document.getElementById('impulse_status');
+    const statusText = document.getElementById('status_text');
+    if (Vm >= -55) {
+      statusText.textContent = 'ACTION POTENTIAL!!!';
+      statusBox.className = 'impulse-status above';
+    } else {
+      statusText.textContent = 'no action potential...';
+      statusBox.className = 'impulse-status below';
+    }
+  }
+
+  runHH();
+  calculateGHK();
+</script>
+
+</body>
+</html>
